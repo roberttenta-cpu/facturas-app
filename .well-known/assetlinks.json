@@ -1,0 +1,8 @@
+[{
+  "relation": ["delegate_permission/common.handle_all_urls"],
+  "target": {
+    "namespace": "android_app",
+    "package_name": "io.github.roberttenta_cpu.twa",
+    "sha256_cert_fingerprints": ["60:9F:14:15:94:56:A3:38:15:1E:5A:2D:53:83:98:E3:4D:85:0F:63:35:66:AB:7C:E4:56:75:F1:19:12:CD:E1"]
+  }
+}]
