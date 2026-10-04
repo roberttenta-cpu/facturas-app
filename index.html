@@ -1,0 +1,305 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#1F3D2B">
+<link rel="manifest" href="manifest.json">
+<link rel="apple-touch-icon" href="icon-192.png">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<title>Enviar Facturas</title>
+<style>
+  *{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+  :root{
+    --verde:#1F3D2B; --vivo:#22C55E; --ambar:#F59E0B; --rojo:#EF4444;
+    --fondo:#F6F8FB; --texto:#1F2430; --gris:#8A94A6; --linea:#E4E7EC;
+  }
+  body{
+    font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;
+    background:var(--fondo); color:var(--texto);
+    min-height:100vh; min-height:100dvh; display:flex; flex-direction:column;
+    padding-top:env(safe-area-inset-top); padding-bottom:env(safe-area-inset-bottom);
+  }
+  header{
+    background:var(--verde); color:#fff; padding:16px 20px;
+    display:flex; align-items:center; justify-content:space-between;
+  }
+  header .t{font-size:17px;font-weight:700;letter-spacing:-.2px}
+  header .d{font-size:12px;opacity:.75;margin-top:2px}
+  .ajustes{
+    background:none;border:1px solid rgba(255,255,255,.3);color:#fff;
+    border-radius:10px;padding:8px 12px;font-size:13px;font-weight:600;cursor:pointer;
+  }
+  main{flex:1;display:flex;flex-direction:column;padding:20px;gap:16px;overflow-y:auto}
+
+  /* ---------- botón cámara ---------- */
+  .camara{
+    background:#fff;border:2px dashed var(--linea);border-radius:22px;
+    padding:36px 20px;display:flex;flex-direction:column;align-items:center;gap:12px;
+    cursor:pointer;transition:border-color .15s,background .15s;
+  }
+  .camara:active{border-color:var(--vivo);background:#F0FDF4}
+  .camara .ico{
+    width:76px;height:76px;border-radius:50%;background:var(--verde);
+    display:flex;align-items:center;justify-content:center;
+  }
+  .camara .ico svg{width:38px;height:38px;fill:#fff}
+  .camara .t1{font-size:18px;font-weight:700}
+  .camara .t2{font-size:13.5px;color:var(--gris);text-align:center;line-height:1.5}
+
+  /* ---------- miniaturas ---------- */
+  .lista{display:none;flex-direction:column;gap:10px}
+  .lista.hay{display:flex}
+  .cab{display:flex;align-items:center;justify-content:space-between;padding:0 2px}
+  .cab .n{font-size:14px;font-weight:700}
+  .cab .limpiar{background:none;border:none;color:var(--rojo);font-size:13px;font-weight:600;cursor:pointer}
+  .fotos{display:grid;grid-template-columns:repeat(3,1fr);gap:10px}
+  .foto{position:relative;aspect-ratio:3/4;border-radius:14px;overflow:hidden;background:#fff;border:1px solid var(--linea)}
+  .foto img{width:100%;height:100%;object-fit:cover;display:block}
+  .foto .x{
+    position:absolute;top:5px;right:5px;width:26px;height:26px;border-radius:50%;
+    background:rgba(0,0,0,.6);color:#fff;border:none;font-size:15px;line-height:1;
+    display:flex;align-items:center;justify-content:center;cursor:pointer;
+  }
+
+  /* ---------- enviar ---------- */
+  footer{padding:16px 20px 22px;background:var(--fondo)}
+  .enviar{
+    width:100%;background:var(--vivo);color:#fff;border:none;border-radius:18px;
+    padding:18px;font-size:17px;font-weight:700;cursor:pointer;
+    box-shadow:0 6px 18px rgba(34,197,94,.3);
+    display:flex;align-items:center;justify-content:center;gap:9px;
+  }
+  .enviar:disabled{background:#CBD5E1;box-shadow:none;cursor:default}
+  .destino{text-align:center;font-size:12.5px;color:var(--gris);margin-top:11px;word-break:break-all}
+
+  /* ---------- panel ajustes ---------- */
+  .fondo-modal{
+    position:fixed;inset:0;background:rgba(15,20,30,.55);z-index:50;
+    display:none;align-items:flex-end;
+  }
+  .fondo-modal.ver{display:flex}
+  .modal{
+    background:#fff;width:100%;border-radius:24px 24px 0 0;padding:26px 22px;
+    padding-bottom:calc(26px + env(safe-area-inset-bottom));
+  }
+  .modal h2{font-size:19px;margin-bottom:5px}
+  .modal p.ayuda{font-size:13px;color:var(--gris);margin-bottom:20px;line-height:1.5}
+  .campo{margin-bottom:16px}
+  .campo label{display:block;font-size:12.5px;font-weight:700;color:var(--gris);margin-bottom:7px}
+  .campo input{
+    width:100%;padding:14px;border:1.5px solid var(--linea);border-radius:13px;
+    font-size:16px;font-family:inherit;background:var(--fondo);
+  }
+  .campo input:focus{outline:none;border-color:var(--verde);background:#fff}
+  .guardar{
+    width:100%;background:var(--verde);color:#fff;border:none;border-radius:14px;
+    padding:16px;font-size:16px;font-weight:700;cursor:pointer;margin-top:4px;
+  }
+  .aviso{
+    background:#FFF7ED;border:1px solid #FED7AA;border-radius:12px;
+    padding:12px 14px;font-size:12.5px;color:#9A3412;line-height:1.5;margin-top:16px;
+  }
+  .ok{
+    position:fixed;left:20px;right:20px;bottom:30px;background:var(--verde);color:#fff;
+    padding:15px 18px;border-radius:14px;font-size:14.5px;text-align:center;z-index:60;
+    opacity:0;transform:translateY(16px);transition:.25s;pointer-events:none;
+  }
+  .ok.ver{opacity:1;transform:translateY(0)}
+</style>
+</head>
+<body>
+
+<header>
+  <div>
+    <div class="t">Enviar Facturas</div>
+    <div class="d" id="cab-destino">Sin configurar</div>
+  </div>
+  <button class="ajustes" id="btn-ajustes">Ajustes</button>
+</header>
+
+<main>
+  <div class="camara" id="btn-camara">
+    <div class="ico">
+      <svg viewBox="0 0 24 24"><path d="M12 15.2a3.2 3.2 0 1 0 0-6.4 3.2 3.2 0 0 0 0 6.4zM9 2 7.17 4H4a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V6a2 2 0 0 0-2-2h-3.17L15 2H9zm3 5a5 5 0 1 1 0 10 5 5 0 0 1 0-10z"/></svg>
+    </div>
+    <div class="t1">Hacer foto</div>
+    <div class="t2">Una foto por factura.<br>Añade todas las que quieras y envíalas juntas.</div>
+  </div>
+
+  <div class="lista" id="lista">
+    <div class="cab">
+      <span class="n" id="contador">0 facturas</span>
+      <button class="limpiar" id="btn-limpiar">Borrar todas</button>
+    </div>
+    <div class="fotos" id="fotos"></div>
+  </div>
+</main>
+
+<footer>
+  <button class="enviar" id="btn-enviar" disabled>
+    <span id="txt-enviar">Enviar por correo</span>
+  </button>
+  <div class="destino" id="pie-destino"></div>
+</footer>
+
+<input type="file" id="archivo" accept="image/*" capture="environment" multiple hidden>
+
+<div class="fondo-modal" id="modal">
+  <div class="modal">
+    <h2>Ajustes</h2>
+    <p class="ayuda">¿A qué correo quieres enviar las facturas? Se guarda en este móvil.</p>
+    <div class="campo">
+      <label>Correo de destino</label>
+      <input type="email" id="in-correo" placeholder="facturas@gestoria.es" inputmode="email" autocapitalize="off" autocorrect="off">
+    </div>
+    <div class="campo">
+      <label>Tu nombre (opcional)</label>
+      <input type="text" id="in-nombre" placeholder="Para que sepan quién envía">
+    </div>
+    <button class="guardar" id="btn-guardar">Guardar</button>
+    <div class="aviso">
+      Al enviar se abre tu aplicación de correo con las fotos ya adjuntas.
+      Solo tienes que pulsar Enviar allí.
+    </div>
+  </div>
+</div>
+
+<div class="ok" id="ok"></div>
+
+<script>
+(function(){
+  const $ = id => document.getElementById(id);
+  let fotos = [];                 // {file, url}
+
+  // ---------- configuración ----------
+  const leer = () => ({
+    correo: localStorage.getItem('correo') || '',
+    nombre: localStorage.getItem('nombre') || ''
+  });
+  function pintarConfig(){
+    const c = leer();
+    $('cab-destino').textContent = c.correo || 'Sin configurar';
+    $('pie-destino').textContent = c.correo ? 'Se enviará a ' + c.correo : 'Configura antes el correo de destino';
+    $('in-correo').value = c.correo;
+    $('in-nombre').value = c.nombre;
+    revisarBoton();
+  }
+  const abrirModal  = () => $('modal').classList.add('ver');
+  const cerrarModal = () => $('modal').classList.remove('ver');
+
+  $('btn-ajustes').onclick = abrirModal;
+  $('modal').onclick = e => { if (e.target === $('modal')) cerrarModal(); };
+  $('btn-guardar').onclick = () => {
+    const correo = $('in-correo').value.trim();
+    if (!correo || !/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(correo)) {
+      alert('Escribe un correo válido.'); return;
+    }
+    localStorage.setItem('correo', correo);
+    localStorage.setItem('nombre', $('in-nombre').value.trim());
+    pintarConfig(); cerrarModal(); avisar('Correo guardado');
+  };
+
+  // ---------- fotos ----------
+  $('btn-camara').onclick = () => $('archivo').click();
+  $('archivo').onchange = e => {
+    for (const f of e.target.files) {
+      if (f.type.startsWith('image/')) fotos.push({ file:f, url:URL.createObjectURL(f) });
+    }
+    e.target.value = '';
+    pintarFotos();
+  };
+
+  function pintarFotos(){
+    const cont = $('fotos');
+    cont.innerHTML = '';
+    fotos.forEach((f, i) => {
+      const d = document.createElement('div');
+      d.className = 'foto';
+      d.innerHTML = '<img src="' + f.url + '" alt=""><button class="x" data-i="' + i + '">&times;</button>';
+      cont.appendChild(d);
+    });
+    cont.querySelectorAll('.x').forEach(b => b.onclick = () => {
+      const i = +b.dataset.i;
+      URL.revokeObjectURL(fotos[i].url);
+      fotos.splice(i, 1);
+      pintarFotos();
+    });
+    $('lista').classList.toggle('hay', fotos.length > 0);
+    $('contador').textContent = fotos.length + (fotos.length === 1 ? ' factura' : ' facturas');
+    revisarBoton();
+  }
+
+  $('btn-limpiar').onclick = () => {
+    if (fotos.length && confirm('¿Borrar las ' + fotos.length + ' fotos?')) {
+      fotos.forEach(f => URL.revokeObjectURL(f.url));
+      fotos = []; pintarFotos();
+    }
+  };
+
+  function revisarBoton(){
+    const listo = fotos.length > 0 && !!leer().correo;
+    $('btn-enviar').disabled = !listo;
+    $('txt-enviar').textContent = fotos.length
+      ? 'Enviar ' + fotos.length + (fotos.length === 1 ? ' factura' : ' facturas')
+      : 'Enviar por correo';
+  }
+
+  function avisar(t){
+    const o = $('ok'); o.textContent = t; o.classList.add('ver');
+    setTimeout(() => o.classList.remove('ver'), 2600);
+  }
+
+  // ---------- enviar ----------
+  $('btn-enviar').onclick = async () => {
+    const c = leer();
+    if (!c.correo) { abrirModal(); return; }
+    if (!fotos.length) return;
+
+    const hoy = new Date().toLocaleDateString('es-ES');
+    const asunto = 'Facturas' + (c.nombre ? ' de ' + c.nombre : '') + ' - ' + hoy;
+    const cuerpo = (c.nombre ? c.nombre + ' envía ' : 'Envío ') + fotos.length +
+                   (fotos.length === 1 ? ' factura' : ' facturas') + ' del ' + hoy + '.';
+    const archivos = fotos.map(f => f.file);
+
+    // Camino bueno: compartir con las fotos ya adjuntas
+    if (navigator.canShare && navigator.canShare({ files: archivos })) {
+      try {
+        await navigator.share({ title: asunto, text: cuerpo, files: archivos });
+        avisar('Enviado. Puedes seguir haciendo fotos.');
+        fotos.forEach(f => URL.revokeObjectURL(f.url));
+        fotos = []; pintarFotos();
+        return;
+      } catch (err) {
+        if (err && err.name === 'AbortError') return;   // el usuario canceló
+      }
+    }
+
+    // Camino de respaldo: guardar las fotos y abrir el correo para adjuntarlas
+    alert('Este móvil no permite adjuntar directamente.\n\n' +
+          'Se van a guardar las ' + fotos.length + ' fotos y se abrirá tu correo: ' +
+          'adjúntalas desde la galería.');
+    fotos.forEach((f, i) => {
+      const a = document.createElement('a');
+      a.href = f.url;
+      a.download = 'factura_' + hoy.replace(/\//g,'-') + '_' + (i+1) + '.jpg';
+      document.body.appendChild(a); a.click(); a.remove();
+    });
+    setTimeout(() => {
+      location.href = 'mailto:' + encodeURIComponent(c.correo) +
+                      '?subject=' + encodeURIComponent(asunto) +
+                      '&body=' + encodeURIComponent(cuerpo);
+    }, 900);
+  };
+
+  // ---------- arranque ----------
+  pintarConfig();
+  if (!leer().correo) abrirModal();
+  if ('serviceWorker' in navigator) {
+    navigator.serviceWorker.register('sw.js').catch(()=>{});
+  }
+})();
+</script>
+</body>
+</html>
